@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>💜 Joyeux anniversaire Lise 💜</title>
+
+<style>
+body{
+margin:0;
+font-family:'Segoe UI';
+background:linear-gradient(135deg,#a64bf4,#ffb3ff);
+color:white;
+text-align:center;
+overflow:hidden;
+}
+
+.screen{display:none;height:100vh;justify-content:center;align-items:center;flex-direction:column;}
+.active{display:flex;}
+
+.card{
+background:rgba(255,255,255,0.1);
+padding:30px;
+border-radius:25px;
+box-shadow:0 0 20px rgba(255,255,255,0.3);
+max-width:500px;
+}
+
+button{
+padding:12px 20px;
+border:none;
+border-radius:20px;
+background:#ffccff;
+cursor:pointer;
+margin:5px;
+transition:0.2s;
+}
+button:hover{transform:scale(1.1);}
+
+input{padding:10px;border-radius:20px;border:none;}
+
+#word{font-size:28px;letter-spacing:5px;}
+
+.heart{
+position:absolute;
+animation:fall linear infinite;
+}
+@keyframes fall{
+0%{transform:translateY(-10vh)}
+100%{transform:translateY(100vh)}
+}
+</style>
+</head>
+
+<body>
+
+<div id="menu" class="screen active">
+<div class="card">
+<h1>💜 Joyeux anniversaire Lise 💜</h1>
+<button onclick="start()">START</button>
+</div>
+</div>
+
+<div id="rules" class="screen">
+<div class="card">
+<h2>Règles</h2>
+<p id="rulesText"></p>
+<button onclick="startGame()">J’ai compris</button>
+</div>
+</div>
+
+<div id="game1" class="screen">
+<div class="card">
+<h2>Pendu</h2>
+<p id="word"></p>
+<input id="letter" maxlength="1">
+<button onclick="guess()">Valider</button>
+<p id="msg1"></p>
+</div>
+</div>
+
+<div id="game2" class="screen">
+<div class="card">
+<h2>Attrape 5 gâteaux 🎂</h2>
+<canvas id="snake" width="300" height="300"></canvas>
+<p id="msg2">0 / 5</p>
+</div>
+</div>
+
+<div id="game3" class="screen">
+<div class="card">
+<h2>Quiz 💜</h2>
+<p id="question"></p>
+<div id="answers"></div>
+<p id="msg3"></p>
+</div>
+</div>
+
+<div id="game4" class="screen">
+<div class="card">
+
+<p>
+Depuis qu’on se connaît, tu es vraiment une fille incroyable 💜<br>
+Tu es belle, intéressante, drôle et unique<br>
+Tu as une énergie que peu de personnes ont<br>
+Tu es quelqu’un de confiance, forte et inspirante<br><br>
+
+Tu mérites le meilleur dans la vie ✨<br>
+Et tout ce qu’il t’arrivera de beau<br><br>
+
+Je suis vraiment heureuse de t’avoir dans ma vie 💖<br><br>
+
+Maintenant petite devinette 👀<br><br>
+
+Quelle est la chose que tu commandes tout le temps<br>
+et qui a fait de toi une star vendredi ?<br>
+#Cro-Magnon
+</p>
+
+<input id="riddle">
+<button onclick="checkRiddle()">Valider</button>
+
+<div id="final"></div>
+
+</div>
+</div>
+
+<script>
+
+// navigation
+function show(id){
+document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+}
+
+let current=1;
+
+function start(){showRules(1);}
+
+function showRules(n){
+current=n;
+show("rules");
+
+let texts={
+1:"Trouve toutes les lettres du message 💜",
+2:"Attrape tous les gâteaux avec les flèches de ton clavier pour bouger 💜",
+3:"Réponds correctement aux questions 💜",
+4:"Trouve la bonne réponse 💜"
+};
+
+rulesText.innerText=texts[n];
+}
+
+function startGame(){show("game"+current);}
+
+// hearts
+setInterval(()=>{
+let h=document.createElement("div");
+h.className="heart";
+h.innerText="💜";
+h.style.left=Math.random()*100+"vw";
+h.style.animationDuration=(2+Math.random()*3)+"s";
+document.body.appendChild(h);
+setTimeout(()=>h.remove(),4000);
+},300);
+
+// pendu
+let secret="JOYEUX ANNIVERSAIRE LISE";
+let display=secret.replace(/[A-Z]/g,"_");
+
+function update(){
+word.innerHTML=display.split("").join(" ");
+}
+update();
+
+function guess(){
+let l=letter.value.toUpperCase();
+if(!l)return;
+
+if(secret.includes(l)){
+let newD="";
+for(let i=0;i<secret.length;i++){
+newD+=(secret[i]===l||display[i]!=="_")?secret[i]:"_";
+}
+display=newD;
+update();
+msg1.innerText="💜 Bien joué";
+
+if(display===secret){
+setTimeout(()=>showRules(2),1000);
+}
+}else{
+msg1.innerText="💔 Dommage";
+}
+}
+
+// snake
+let ctx=snake.getContext("2d");
+let x=150,y=150,score=0;
+let food={x:50,y:50};
+
+document.addEventListener("keydown",e=>{
+if(!document.getElementById("game2").classList.contains("active"))return;
+
+if(e.key==="ArrowUp")y-=10;
+if(e.key==="ArrowDown")y+=10;
+if(e.key==="ArrowLeft")x-=10;
+if(e.key==="ArrowRight")x+=10;
+
+if(Math.abs(x-food.x)<10&&Math.abs(y-food.y)<10){
+score++;
+msg2.innerText=score+" / 5 💜";
+
+food.x=Math.random()*280;
+food.y=Math.random()*280;
+
+if(score>=5){
+setTimeout(()=>showRules(3),1000);
+}
+}
+draw();
+});
+
+function draw(){
+ctx.clearRect(0,0,300,300);
+ctx.fillStyle="purple";
+ctx.fillRect(x,y,10,10);
+ctx.fillStyle="pink";
+ctx.fillRect(food.x,food.y,10,10);
+}
+setInterval(draw,100);
+
+// quiz
+let q=0;
+let data=[
+{q:"Plat ?",a:["Crêpes","Fromage","Gnocchis"],c:"Gnocchis"},
+{q:"Marque ?",a:["Victoria's Secret","Rituals","Guess"],c:"Victoria's Secret"},
+{q:"Princesse ?",a:["Gadjo","Adam","Lise"],c:"Lise"}
+];
+
+function loadQ(){
+question.innerText=data[q].q;
+answers.innerHTML="";
+data[q].a.forEach(a=>{
+let b=document.createElement("button");
+b.innerText=a;
+b.onclick=()=>check(a);
+answers.appendChild(b);
+});
+}
+loadQ();
+
+function check(a){
+if(a===data[q].c){
+msg3.innerText="💜 Oui";
+q++;
+if(q<data.length)setTimeout(loadQ,1000);
+else{
+msg3.innerText="💜 T’es vraiment incroyable ✨";
+setTimeout(()=>showRules(4),1500);
+}
+}else{
+msg3.innerText="💔 Nope";
+}
+}
+
+// riddle
+function checkRiddle(){
+let val=riddle.value.toLowerCase().replace(/\s/g,"");
+
+if(val.includes("pancake")){
+final.innerHTML=`
+<h2>💜 JOYEUX ANNIVERSAIRE LISE 💜</h2>
+<p>Je t’invite mercredi vers midi à Yummy Pancake 🥞💜</p>
+<button onclick="finish()">FIN 💖</button>
+`;
+}
+}
+
+function finish(){
+for(let i=0;i<80;i++){
+let h=document.createElement("div");
+h.className="heart";
+h.innerText="💖";
+h.style.left=Math.random()*100+"vw";
+h.style.animationDuration="2s";
+document.body.appendChild(h);
+}
+}
+
+</script>
+
+</body>
+</html>
