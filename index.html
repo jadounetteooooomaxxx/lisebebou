@@ -7,52 +7,95 @@
 <style>
 body{
 margin:0;
-font-family:'Segoe UI';
-background:linear-gradient(135deg,#a64bf4,#ffb3ff);
+font-family:'Segoe UI', sans-serif;
+background:linear-gradient(135deg,#a64bf4,#ffb3ff,#d28bff);
+background-size:300% 300%;
+animation:bg 10s infinite alternate;
+overflow:hidden;
 color:white;
 text-align:center;
-overflow:hidden;
 }
 
-.screen{display:none;height:100vh;justify-content:center;align-items:center;flex-direction:column;}
+@keyframes bg{
+0%{background-position:0% 50%}
+100%{background-position:100% 50%}
+}
+
+.screen{
+display:none;
+height:100vh;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+}
+
 .active{display:flex;}
 
 .card{
-background:rgba(255,255,255,0.1);
-padding:30px;
+background:rgba(255,255,255,0.12);
+padding:25px;
 border-radius:25px;
-box-shadow:0 0 20px rgba(255,255,255,0.3);
-max-width:500px;
+box-shadow:0 0 25px rgba(255,255,255,0.3);
+max-width:520px;
+animation:pop .4s ease;
+}
+
+@keyframes pop{
+from{transform:scale(.8);opacity:0}
+to{transform:scale(1);opacity:1}
 }
 
 button{
-padding:12px 20px;
+padding:12px 18px;
 border:none;
 border-radius:20px;
 background:#ffccff;
 cursor:pointer;
-margin:5px;
-transition:0.2s;
+margin:6px;
+transition:.2s;
+font-weight:bold;
 }
-button:hover{transform:scale(1.1);}
+button:hover{transform:scale(1.1)}
 
-input{padding:10px;border-radius:20px;border:none;}
+input{
+padding:10px;
+border-radius:15px;
+border:none;
+text-align:center;
+}
 
-#word{font-size:28px;letter-spacing:5px;}
+#word{
+font-size:28px;
+letter-spacing:6px;
+word-spacing:10px;
+margin:15px;
+}
 
 .heart{
 position:absolute;
-animation:fall linear infinite;
+animation:fall linear forwards;
 }
 @keyframes fall{
-0%{transform:translateY(-10vh)}
-100%{transform:translateY(100vh)}
+0%{transform:translateY(-10vh);opacity:1}
+100%{transform:translateY(110vh);opacity:0}
+}
+
+canvas{background:white;border-radius:10px}
+
+/* puzzle */
+.piece{
+font-size:40px;
+cursor:grab;
+margin:5px;
+display:inline-block;
+user-select:none;
 }
 </style>
 </head>
 
 <body>
 
+<!-- MENU -->
 <div id="menu" class="screen active">
 <div class="card">
 <h1>💜 Joyeux anniversaire Lise 💜</h1>
@@ -60,17 +103,19 @@ animation:fall linear infinite;
 </div>
 </div>
 
+<!-- REGLES -->
 <div id="rules" class="screen">
 <div class="card">
-<h2>Règles</h2>
+<h2>📜 Règles</h2>
 <p id="rulesText"></p>
-<button onclick="startGame()">J’ai compris</button>
+<button onclick="next()">J’ai compris</button>
 </div>
 </div>
 
+<!-- PENDU -->
 <div id="game1" class="screen">
 <div class="card">
-<h2>Pendu</h2>
+<h2>🎯 Pendu</h2>
 <p id="word"></p>
 <input id="letter" maxlength="1">
 <button onclick="guess()">Valider</button>
@@ -78,81 +123,66 @@ animation:fall linear infinite;
 </div>
 </div>
 
+<!-- SNAKE -->
 <div id="game2" class="screen">
 <div class="card">
-<h2>Attrape 5 gâteaux 🎂</h2>
+<h2>🐍 Attrape les gâteaux</h2>
+<p>Attrape tous les gâteaux avec les flèches de ton clavier pour bouger 💜</p>
 <canvas id="snake" width="300" height="300"></canvas>
 <p id="msg2">0 / 5</p>
 </div>
 </div>
 
+<!-- QUIZ -->
 <div id="game3" class="screen">
 <div class="card">
-<h2>Quiz 💜</h2>
+<h2>💜 Quiz</h2>
 <p id="question"></p>
 <div id="answers"></div>
 <p id="msg3"></p>
 </div>
 </div>
 
+<!-- PUZZLE + FINAL -->
 <div id="game4" class="screen">
 <div class="card">
-
-<p>
-Depuis qu’on se connaît, tu es vraiment une fille incroyable 💜<br>
-Tu es belle, intéressante, drôle et unique<br>
-Tu as une énergie que peu de personnes ont<br>
-Tu es quelqu’un de confiance, forte et inspirante<br><br>
-
-Tu mérites le meilleur dans la vie ✨<br>
-Et tout ce qu’il t’arrivera de beau<br><br>
-
-Je suis vraiment heureuse de t’avoir dans ma vie 💖<br><br>
-
-Maintenant petite devinette 👀<br><br>
-
-Quelle est la chose que tu commandes tout le temps<br>
-et qui a fait de toi une star vendredi ?<br>
-#Cro-Magnon
-</p>
-
-<input id="riddle">
-<button onclick="checkRiddle()">Valider</button>
-
-<div id="final"></div>
-
+<h2>🧩 Puzzle final</h2>
+<p>Réorganise les morceaux</p>
+<div id="puzzle"></div>
+<button onclick="checkPuzzle()">Valider</button>
+<p id="msg4"></p>
 </div>
 </div>
 
 <script>
 
-// navigation
-function show(id){
-document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-document.getElementById(id).classList.add("active");
-}
+// NAV
+let step=1;
 
-let current=1;
-
-function start(){showRules(1);}
+function start(){showRules(1)}
 
 function showRules(n){
-current=n;
+step=n;
 show("rules");
 
 let texts={
-1:"Trouve toutes les lettres du message 💜",
-2:"Attrape tous les gâteaux avec les flèches de ton clavier pour bouger 💜",
+1:"Trouve le mot secret 💜",
+2:"Attrape 5 gâteaux avec les flèches du clavier 💜",
 3:"Réponds correctement aux questions 💜",
-4:"Trouve la bonne réponse 💜"
+4:"Reconstitue le puzzle final 💜"
 };
 
 rulesText.innerText=texts[n];
 }
 
-function startGame(){show("game"+current);}
+function next(){show("game"+step)}
 
-// hearts
+function show(id){
+document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+}
+
+// 💜 HEARTS
 setInterval(()=>{
 let h=document.createElement("div");
 h.className="heart";
@@ -161,31 +191,37 @@ h.style.left=Math.random()*100+"vw";
 h.style.animationDuration=(2+Math.random()*3)+"s";
 document.body.appendChild(h);
 setTimeout(()=>h.remove(),4000);
-},300);
+},250);
 
-// pendu
-let secret="JOYEUX ANNIVERSAIRE LISE";
-let display=secret.replace(/[A-Z]/g,"_");
+// ---------------- PENDU
+let word="JOYEUX ANNIVERSAIRE LISE";
+let display=word.replace(/[A-Z]/g,"_");
 
-function update(){
-word.innerHTML=display.split("").join(" ");
+function renderWord(){
+wordEl.innerText=display.split("").join(" ");
 }
-update();
+let wordEl=document.getElementById("word");
+renderWord();
 
 function guess(){
-let l=letter.value.toUpperCase();
-if(!l)return;
+let l=letter.value.toUpperCase().trim();
+letter.value="";
 
-if(secret.includes(l)){
-let newD="";
-for(let i=0;i<secret.length;i++){
-newD+=(secret[i]===l||display[i]!=="_")?secret[i]:"_";
+if(!/^[A-Z]$/.test(l)){
+msg1.innerText="⚠️ Lettre invalide";
+return;
 }
-display=newD;
-update();
+
+if(word.includes(l)){
+let n="";
+for(let i=0;i<word.length;i++){
+n+=(word[i]===l||display[i]!=="_")?word[i]:"_";
+}
+display=n;
+renderWord();
 msg1.innerText="💜 Bien joué";
 
-if(display===secret){
+if(display===word){
 setTimeout(()=>showRules(2),1000);
 }
 }else{
@@ -193,53 +229,77 @@ msg1.innerText="💔 Dommage";
 }
 }
 
-// snake
+// ---------------- SNAKE GRID
 let ctx=snake.getContext("2d");
-let x=150,y=150,score=0;
-let food={x:50,y:50};
+let size=10;
+
+let snake=[{x:5,y:5}];
+let dir={x:1,y:0};
+let food={x:2,y:2};
+let score=0;
 
 document.addEventListener("keydown",e=>{
 if(!document.getElementById("game2").classList.contains("active"))return;
 
-if(e.key==="ArrowUp")y-=10;
-if(e.key==="ArrowDown")y+=10;
-if(e.key==="ArrowLeft")x-=10;
-if(e.key==="ArrowRight")x+=10;
+if(e.key==="ArrowUp"&&dir.y!==1)dir={x:0,y:-1};
+if(e.key==="ArrowDown"&&dir.y!==-1)dir={x:0,y:1};
+if(e.key==="ArrowLeft"&&dir.x!==1)dir={x:-1,y:0};
+if(e.key==="ArrowRight"&&dir.x!==-1)dir={x:1,y:0};
+});
 
-if(Math.abs(x-food.x)<10&&Math.abs(y-food.y)<10){
+function move(){
+let head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+
+if(head.x<0||head.y<0||head.x>=size||head.y>=size){
+snake=[{x:5,y:5}];
+score=0;
+}
+
+snake.unshift(head);
+
+if(head.x===food.x&&head.y===food.y){
 score++;
 msg2.innerText=score+" / 5 💜";
 
-food.x=Math.random()*280;
-food.y=Math.random()*280;
+food={x:Math.floor(Math.random()*10),y:Math.floor(Math.random()*10)};
 
 if(score>=5){
 setTimeout(()=>showRules(3),1000);
 }
+}else{
+snake.pop();
 }
+
 draw();
-});
+}
 
 function draw(){
 ctx.clearRect(0,0,300,300);
-ctx.fillStyle="purple";
-ctx.fillRect(x,y,10,10);
-ctx.fillStyle="pink";
-ctx.fillRect(food.x,food.y,10,10);
-}
-setInterval(draw,100);
 
-// quiz
+snake.forEach(s=>{
+ctx.fillStyle="purple";
+ctx.fillRect(s.x*30,s.y*30,28,28);
+});
+
+ctx.fillStyle="pink";
+ctx.fillRect(food.x*30,food.y*30,28,28);
+}
+
+setInterval(move,200);
+
+// ---------------- QUIZ
 let q=0;
+
 let data=[
-{q:"Plat ?",a:["Crêpes","Fromage","Gnocchis"],c:"Gnocchis"},
-{q:"Marque ?",a:["Victoria's Secret","Rituals","Guess"],c:"Victoria's Secret"},
-{q:"Princesse ?",a:["Gadjo","Adam","Lise"],c:"Lise"}
+{q:"Quel est le plat que Lise cuisine tout le temps ?",a:["Crêpes","Fromage","Gnocchis"],c:"Gnocchis"},
+{q:"Quelle est sa marque préférée ?",a:["Victoria's Secret","Rituals","Guess"],c:"Victoria's Secret"},
+{q:"Quelle est la plus belle princesse ?",a:["GADJO","Adam","Lise"],c:"Lise"}
 ];
 
 function loadQ(){
 question.innerText=data[q].q;
 answers.innerHTML="";
+
 data[q].a.forEach(a=>{
 let b=document.createElement("button");
 b.innerText=a;
@@ -247,36 +307,79 @@ b.onclick=()=>check(a);
 answers.appendChild(b);
 });
 }
+
 loadQ();
 
 function check(a){
 if(a===data[q].c){
 msg3.innerText="💜 Oui";
 q++;
+
 if(q<data.length)setTimeout(loadQ,1000);
-else{
-msg3.innerText="💜 T’es vraiment incroyable ✨";
-setTimeout(()=>showRules(4),1500);
-}
+else setTimeout(()=>showRules(4),1000);
+
 }else{
 msg3.innerText="💔 Nope";
 }
 }
 
-// riddle
-function checkRiddle(){
-let val=riddle.value.toLowerCase().replace(/\s/g,"");
+// ---------------- PUZZLE DRAG DROP
+let order=["🥞","🥞","🥞","🥞"];
+order.sort(()=>Math.random()-0.5);
 
-if(val.includes("pancake")){
-final.innerHTML=`
+let puzzle=document.getElementById("puzzle");
+
+function render(){
+puzzle.innerHTML="";
+
+order.forEach((p,i)=>{
+let s=document.createElement("span");
+s.className="piece";
+s.innerText=p;
+s.draggable=true;
+
+s.ondragstart=e=>e.dataTransfer.setData("i",i);
+
+s.ondrop=e=>{
+let from=e.dataTransfer.getData("i");
+
+let tmp=order[i];
+order[i]=order[from];
+order[from]=tmp;
+
+render();
+};
+
+s.ondragover=e=>e.preventDefault();
+
+puzzle.appendChild(s);
+});
+}
+
+render();
+
+function checkPuzzle(){
+if(order.join("")==="🥞🥞🥞🥞"){
+msg4.innerHTML="💜 parfait !";
+setTimeout(final,1000);
+}else{
+msg4.innerText="💔 essaie encore";
+}
+}
+
+// ---------------- FINAL
+function final(){
+confetti();
+
+document.getElementById("game4").innerHTML=`
 <h2>💜 JOYEUX ANNIVERSAIRE LISE 💜</h2>
 <p>Je t’invite mercredi vers midi à Yummy Pancake 🥞💜</p>
-<button onclick="finish()">FIN 💖</button>
+<button onclick="location.reload()">FIN 💖</button>
 `;
 }
-}
 
-function finish(){
+// CONFETTI
+function confetti(){
 for(let i=0;i<80;i++){
 let h=document.createElement("div");
 h.className="heart";
